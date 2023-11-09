@@ -2,7 +2,7 @@ library(dplyr)
 library(tidyr)
 library(stringr)
 library(ggplot2)
-setwd("C:/Users/koly36/Desktop/RScripts")
+setwd("C:/Users/MangoVirus/Desktop/R")
 
 
 df <- read.csv("ДЗ3_superstore_data.csv", header = TRUE)
