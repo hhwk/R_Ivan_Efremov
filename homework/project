@@ -1,0 +1,160 @@
+install.packages("readxl")
+install.packages("dplyr")
+install.packages("outliers")
+install.packages("shiny")
+install.packages("caret")
+install.packages("randomForest")
+library(readxl) 
+
+# Загрузка данных из файла Excel 
+data <- read_excel("final.xlsx") 
+# Создание выборки из 5000 строк
+sample_df <- data[sample(nrow(data), 5000), ]
+# Сортировка данных по параметру 'year' 
+sample_df <- sample_df[order(sample_df$year), ] 
+
+# Сортировка данных по параметру 'Driver1' 
+sample_df <- sample_df[order(sample_df$Driver1), ] 
+
+# Сортировка данных по параметру 'Age1' 
+sample_df <- sample_df[order(sample_df$Age1), ] 
+
+# Чистка от пустых значений
+df <- na.omit(sample_df)
+
+# Вывод отсортированных данных 
+print(df)
+
+
+# Вычисление среднего значения для столбца "temperature"
+mean_temperature <- mean(df$temperature)
+
+# Вычисление медианы для столбца "humidity" 
+median_humidity <- median(df$humidity) 
+
+# Вычисление стандартного отклонения для столбца "temperature" 
+sd_temperature <- sd(df$temperature) 
+
+# Вычисление дисперсии для столбца "humidity" 
+var_humidity <- var(df$humidity)
+
+print(mean_temperature)
+print(median_humidity)
+print(sd_temperature)
+print(var_humidity)
+
+# Установка и загрузка необходимых пакетов
+library(ggplot2)
+
+# График распределения
+ggplot(df, aes(x = year, fill = Driver1)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Распределение по годам", fill = "Виновник ДТП")
+
+# Гистограмма
+ggplot(df, aes(x = temperature, fill = Driver1)) +
+  geom_histogram(binwidth = 1, alpha = 0.5) +
+  labs(title = "Гистограмма температуры", fill = "Виновник ДТП")
+
+# График плотности распределения
+ggplot(df, aes(x = humidity, fill = Pol1)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Плотность распределения влажности", fill = "Пол виновника ДТП")
+
+# График boxplot
+ggplot(df, aes(x = Driver1, y = Age1, fill = Driver1)) +
+  geom_boxplot() +
+  labs(title = "Boxplot возраста в зависимости от виновника ДТП", fill = "Виновник ДТП")
+
+# Точечная диаграмма
+ggplot(df, aes(x = Driver2, y = Age2, color = Pol2)) +
+  geom_point() +
+  labs(title = "Точечная диаграмма возраста в зависимости от участника ДТП и его пола", color = "Пол участника ДТП")
+
+# Проверка на нормальность распределений
+normality_test <- function(data) {
+  result <- lapply(data, function(x) shapiro.test(x)$p.value)
+  return(result)
+}
+
+# Нахождение выбросов
+outliers <- function(data) {
+  result <- lapply(data, function(x) boxplot.stats(x)$out)
+  return(result)
+}
+
+# Удаление выбросов
+remove_outliers <- function(data) {
+  result <- lapply(data, function(x) {
+    outliers <- boxplot.stats(x)$out
+    x[!(x %in% outliers)]
+  })
+  return(result)
+}
+
+# Применение функций к нужным переменным
+variables <- c("year", "temperature", "humidity", "Wind_speed")
+normality_results <- normality_test(df[, variables])
+outliers_results <- outliers(df[, variables])
+df_cleaned <- remove_outliers(df[, variables])
+
+# Вывод результатов
+print("Результаты проверки на нормальность распределений:")
+print(normality_results)
+
+print("Выбросы:")
+print(outliers_results)
+
+print("Датасет без выбросов:")
+print(df_cleaned)
+
+# Проверка структуры датасета
+str(df)
+
+# Расчет коэффициентов корреляции
+cor_matrix <- cor(df[, c("year", "temperature", "humidity", "Wind_speed")])
+
+# Вывод матрицы корреляции
+print(cor_matrix)
+
+# Проверка значимости коэффициентов корреляции
+cor_test <- cor.test(df$year, df$temperature)
+
+# Вывод результатов проверки значимости
+print(cor_test)
+
+# Load necessary libraries
+library(caret)
+library(randomForest)
+
+# Preprocess data
+df$Driver1 <- as.factor(df$Driver1)
+df$Driver2 <- as.factor(df$Driver2)
+df$Pol1 <- as.factor(df$Pol1)
+df$Pol2 <- as.factor(df$Pol2)
+
+# Split data into training and testing sets
+set.seed(123)
+trainIndex <- createDataPartition(df$Driver1, p = 0.8, list = FALSE, times = 1)
+trainSet <- df[trainIndex, ]
+testSet <- df[-trainIndex, ]
+
+# Train the model
+model <- randomForest(Driver1 ~ . - Driver1, data = trainSet)
+
+# Make predictions
+predictions <- predict(model, testSet)
+
+# Calculate quality metrics
+confusionMatrix(predictions, testSet$Driver1)
+
+# Train the model for Driver2
+model2 <- randomForest(Driver2 ~ . - Driver2, data = trainSet)
+
+# Make predictions for Driver2
+predictions2 <- predict(model2, testSet)
+
+# Calculate quality metrics for Driver2
+confusionMatrix(predictions2, testSet$Driver2)
+  geom_smooth(method = "lm", se = FALSE)
+
